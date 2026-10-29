@@ -1,4 +1,4 @@
-name: STUDIO HAZE targeted language tests
+﻿name: STUDIO HAZE targeted language tests
 on:
   push:
     branches: [studiohaze-targeted-ci]
@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ae26a458489d1c47a525d3ca2eb111a62361da1d
+          ref: 49a3426e2a978424b8480e5897d1a11e41948008
           persist-credentials: false
       - uses: actions/setup-go@v6
         with:
@@ -50,3 +50,4 @@ jobs:
           subprocess.run(['git', 'add', '--', *allowed], check=True)
           print('TESTED_SOURCE_TREE=' + subprocess.check_output(['git', 'write-tree'], text=True).strip(), flush=True)
           PY
+
