@@ -17,31 +17,31 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: 49a3426e2a978424b8480e5897d1a11e41948008
+          ref: 74e6b43ebaf340e92de819eb322af371729c6c8a
           persist-credentials: false
       - uses: actions/setup-go@v6
         with:
           go-version: '1.26.4'
           cache: false
-      - name: Generate metadata and run two-language regressions
+      - name: Generate and verify two-language data-driven fixtures
         shell: bash
         run: |
           set -euo pipefail
           git rev-parse HEAD
           go version
-          gofmt -w lexers/studiohaze_test.go
-          go generate ./lexers
           go test -c -o /tmp/studiohaze-chroma.test ./lexers
           cd lexers
-          /tmp/studiohaze-chroma.test -test.list '^TestTopazLispexTokens$' | grep -x TestTopazLispexTokens
           RECORD=true /tmp/studiohaze-chroma.test -test.run '^TestLexers$/(Topaz|Lispex)' -test.v
-          /tmp/studiohaze-chroma.test -test.run '^(TestTopazLispexTokens|TestEmbeddedLexerMetadata|TestLexers)$/(Topaz|Lispex)' -test.v
+          /tmp/studiohaze-chroma.test -test.run '^(TestEmbeddedLexerMetadata|TestLexers)$/(Topaz|Lispex)' -test.v
           cd ..
           python3 - <<'PY'
-          import subprocess, base64
-          allowed = ['lexers/lexers_gen.go', 'lexers/studiohaze_test.go', 'lexers/testdata/topaz.expected', 'lexers/testdata/lispex.expected']
+          import subprocess, base64, json
+          allowed = ['lexers/testdata/topaz.expected', 'lexers/testdata/lispex.expected']
           changed = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
-          assert set(changed) <= set(allowed), changed
+          assert set(changed) == set(allowed), changed
+          for path in allowed:
+              tokens = json.load(open(path))
+              assert not any(token['type'] == 'Error' for token in tokens), path
           patch = subprocess.check_output(['git', 'diff', '--binary', '--', *allowed])
           assert len(patch) < 200000, len(patch)
           encoded = base64.b64encode(patch).decode()
